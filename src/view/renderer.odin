@@ -9,8 +9,39 @@ COLOR_MACHINE_OUTLINE :: ray.Color{50, 50, 50, 255}
 COLOR_SELECTED :: ray.Color{230, 41, 55, 255}
 
 draw_factory :: proc(factory: ^model.Factory) {
+    for &node in factory.ore_nodes {
+        def, exists := factory.ore_node_registry[node.def_id];
+        if !exists {continue;}
+
+        posX := i32(node.pos.x);
+        posY := i32(node.pos.y);
+        radius := node.radius;
+
+        color := def.color;
+
+        if node.is_selected {
+            ray.DrawCircleLines(posX, posY, radius + 4, ray.WHITE);
+        }
+
+        ray.DrawCircle(posX, posY, radius, color);
+        ray.DrawCircleLines(posX, posY, radius, ray.BLACK);
+    
+        ray.DrawText(
+            strings.clone_to_cstring(def.name), 
+            posX - 20, 
+            posY - 10, 
+            10, 
+            ray.BLACK
+        );
+
+        base_rate := def.rates[node.purity]
+        
+        purity_text := ray.TextFormat("%v (%.0f/min)", node.purity, base_rate)
+        ray.DrawText(purity_text, posX - 30, posY + 5, 10, ray.DARKGRAY)
+    }
+
     for &machine in factory.machines {
-        def, exists := factory.registry[machine.def_id];
+        def, exists := factory.machine_registry[machine.def_id];
         if !exists {continue;}
 
         posX := i32(machine.pos.x);

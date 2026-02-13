@@ -1,0 +1,8 @@
+id = "iron_node"
+name = "Iron Ore"
+color = [165, 165, 170, 255]
+
+[extraction_rates]
+impure = 30
+normal = 60
+pure = 120

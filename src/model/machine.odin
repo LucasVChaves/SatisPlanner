@@ -12,7 +12,7 @@ MachineDef :: struct {
     output_ports: int,
 }
 
-pos :: struct {
+Machine :: struct {
     uuid: u64,
     def_id: string,
     pos: linalg.Vector2f32,

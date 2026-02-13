@@ -1,5 +1,6 @@
 package controller
 
+import "core:math";
 import ray "vendor:raylib";
 import "../model";
 
@@ -38,6 +39,25 @@ update_input :: proc(factory: ^model.Factory, camera: ray.Camera2D) {
                 m.is_selected = false;
             }
         }
+
+        if !clicked_on_something {
+            for &node in factory.ore_nodes {
+                // Point-Cicle COllision
+                dx := mouse_world.x - node.pos.x;
+                dy := mouse_world.y - node.pos.y;
+                distance := math.sqrt_f32(dx*dx + dy*dy);
+
+                if distance <= node.radius {
+                    node.is_selected = true;
+                    node.is_dragging = true;
+                    clicked_on_something = true;
+                    
+                    ctrl_state.drag_offset.x = dx
+                    ctrl_state.drag_offset.y = dy
+                    break
+                }
+            }
+        }
     }
 
     if ray.IsMouseButtonDown(ray.MouseButton.LEFT) {
@@ -47,11 +67,22 @@ update_input :: proc(factory: ^model.Factory, camera: ray.Camera2D) {
                 machine.pos.y = mouse_world.y - ctrl_state.drag_offset.y;
             }
         }
+
+        for &node in factory.ore_nodes {
+            if node.is_dragging {
+                node.pos.x = mouse_world.x - ctrl_state.drag_offset.x
+                node.pos.y = mouse_world.y - ctrl_state.drag_offset.y
+            }
+        }
     }
 
     if ray.IsMouseButtonReleased(ray.MouseButton.LEFT) {
         for &machine in factory.machines {
             machine.is_dragging = false;
+        }
+
+        for &node in factory.ore_nodes {
+            node.is_dragging = false;
         }
     }
 }

@@ -12,7 +12,7 @@ load_registry :: proc(path: string) -> map[string]MachineDef {
 
     handle, err := os.open(path);
     if err != os.ERROR_NONE {
-        fmt.println("Erro ao abrir pasta:", err);
+        fmt.println("ERROR: could not open dir:", err);
         return registry;
     }
     defer os.close(handle);
@@ -28,7 +28,34 @@ load_registry :: proc(path: string) -> map[string]MachineDef {
         def, success := parse_machine_toml(full_path);
         if success {
             registry[def.id] = def;
-            fmt.printf("Carregado [TOML]: %s (%s)\n", def.name, def.id);
+            fmt.printf("Loaded [TOML]: %s (%s)\n", def.name, def.id);
+        }
+    }
+    return registry
+}
+
+load_ore_node_registry :: proc(path: string) -> map[string]OreNodeDef {
+    registry := make(map[string]OreNodeDef);
+
+    handle, err := os.open(path);
+    if err != os.ERROR_NONE {
+        fmt.println("ERROR: could not open dir:", err);
+        return registry;
+    }
+    defer os.close(handle);
+
+    file_infos, _ := os.read_dir(handle, -1);
+    
+    for info in file_infos {
+        if info.is_dir { continue; }
+        if !strings.has_suffix(info.name, ".toml") { continue; }
+
+        full_path := fmt.tprintf("%s/%s", path, info.name);
+
+        def, success := parse_ore_node_toml(full_path);
+        if success {
+            registry[def.id] = def;
+            fmt.printf("Loaded [TOML]: %s (%s)\n", def.name, def.id);
         }
     }
     return registry
@@ -75,6 +102,62 @@ parse_machine_toml :: proc(filepath: string) -> (MachineDef, bool) {
         def.color = ray.Color{r, g, b, a};
     } else {
         def.color = ray.GRAY;
+    }
+
+    return def, true;
+}
+
+parse_ore_node_toml :: proc(filepath: string) -> (OreNodeDef, bool) {
+    doc, err := toml.parse_file(filepath, context.temp_allocator);
+    if toml.print_error(err) do return OreNodeDef{}, false;
+
+    def := OreNodeDef{}
+
+    if id_val, ok := toml.get_string(doc, "id"); ok {
+        def.id = strings.clone(id_val)
+    } else { return def, false }
+
+    if name_val, ok := toml.get_string(doc, "name"); ok {
+        def.name = strings.clone(name_val)
+    }
+
+    if list, ok := toml.get_list(doc, "color"); ok && len(list) >= 3 {
+        get_u8 :: proc(val: toml.Type) -> u8 {
+            #partial switch v in val {
+                case i64: return u8(v)
+                case f64: return u8(v)
+                case: return 0
+            }
+        }
+
+        r := get_u8(list[0]);
+        g := get_u8(list[1]);
+        b := get_u8(list[2]);
+        a := u8(255);
+        if len(list) > 3 { a = get_u8(list[3]); }
+        
+        def.color = ray.Color{r, g, b, a};
+    } else {
+        def.color = ray.GRAY;
+    }
+
+    if rates_table, ok := toml.get_table(doc, "extraction_rates"); ok {
+        get_rate :: proc(tbl: ^toml.Table, key: string) -> f32 {
+            if val, ok := toml.get_i64(tbl, key); ok {
+                return f32(val);
+            }
+            fmt.printf("WARNING: Rate '%s' not found or not an int.\n", key);
+            return 0.0
+        }
+
+        def.rates[.Impure] = get_rate(rates_table, "impure");
+        def.rates[.Normal] = get_rate(rates_table, "normal");
+        def.rates[.Pure]   = get_rate(rates_table, "pure");
+    } else {
+        // Fallback
+        def.rates[.Impure] = 30;
+        def.rates[.Normal] = 60;
+        def.rates[.Pure]   = 120;
     }
 
     return def, true;
