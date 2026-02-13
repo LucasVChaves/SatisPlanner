@@ -19,9 +19,9 @@ update_input :: proc(factory: ^model.Factory, camera: ray.Camera2D) {
         #reverse for &machine in factory.machines {
             // AABB Collision
             if mouse_world.x >= machine.pos.x &&
-            mouse_world.x <= machine.pos.x + machine.size.x &&
+            mouse_world.x <= machine.pos.x + machine.pos.x &&
             mouse_world.y >= machine.pos.y &&
-            mouse_world.y <= machine.pos.y + machine.size.y {
+            mouse_world.y <= machine.pos.y + machine.pos.y {
                 machine.is_selected = true;
                 machine.is_dragging = true;
                 clicked_on_something = true;

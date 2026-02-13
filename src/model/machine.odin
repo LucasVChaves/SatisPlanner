@@ -1,22 +1,21 @@
 package model
 
 import "core:math/linalg";
+import ray "vendor:raylib";
 
-// TODO: Move to TOML files and extract from them
-MachineType :: enum {
-    Miner,
-    Smelter,
-    Constructor,
-    Merger,
-    Splitter,
+MachineDef :: struct {
+    id: string,
+    name: string,
+    size: linalg.Vector2f32,
+    color: ray.Color,
+    input_ports: int,
+    output_ports: int,
 }
 
-Machine :: struct {
-    id: int,
-    type: MachineType,
+pos :: struct {
+    uuid: u64,
+    def_id: string,
     pos: linalg.Vector2f32,
-    size: linalg.Vector2f32,
-    name: string,
 
     is_selected: bool,
     is_dragging: bool,

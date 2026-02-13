@@ -1,0 +1,7 @@
+id = "constructor"
+name = "constructor"
+width = 80
+height = 80
+color = [100, 255, 50, 255] # R, G, B, A
+inputs = 1
+outputs = 1

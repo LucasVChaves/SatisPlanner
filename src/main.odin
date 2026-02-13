@@ -13,8 +13,26 @@ main :: proc() {
     ray.SetTargetFPS(60);
 
     factory := model.Factory{}
-    append(&factory.machines, model.factory_make_machine(.Miner, 100, 100));
-    append(&factory.machines, model.factory_make_machine(.Smelter, 300, 300));
+    factory.registry = model.load_registry("assets/machines");
+
+    // TEMP
+    if "smelter_mk1" in factory.registry {
+        new_machine := model.pos{
+            uuid = 1,
+            def_id = "smelter_mk1",
+            pos = {100, 100},
+        };
+        append(&factory.machines, new_machine);
+    }
+
+    if "miner_mk1" in factory.registry {
+        new_machine := model.pos{
+            uuid = 2,
+            def_id = "miner_mk1",
+            pos = {400, 200},
+        };
+        append(&factory.machines, new_machine);
+    }
 
     camera := ray.Camera2D{zoom = 1.0}
 

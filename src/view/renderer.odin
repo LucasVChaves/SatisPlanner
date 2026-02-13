@@ -1,6 +1,7 @@
 package view
 
 import ray "vendor:raylib";
+import "core:strings";
 import "../model";
 
 COLOR_MACHINE_BODY :: ray.Color{200, 200, 200, 255}
@@ -9,28 +10,33 @@ COLOR_SELECTED :: ray.Color{230, 41, 55, 255}
 
 draw_factory :: proc(factory: ^model.Factory) {
     for &machine in factory.machines {
+        def, exists := factory.registry[machine.def_id];
+        if !exists {continue;}
+
         posX := i32(machine.pos.x);
         posY := i32(machine.pos.y);
-        width := i32(machine.size.x);
-        height := i32(machine.size.y);
+        width := i32(def.size.x);
+        height := i32(def.size.y);
 
-        outline_color := machine.is_selected ? COLOR_SELECTED : COLOR_MACHINE_OUTLINE;
-        thickness := machine.is_selected ? i32(3) : i32(1);
+        body_color := def.color;
 
-        ray.DrawRectangle(posX, posY, width, height, COLOR_MACHINE_BODY);
+        if machine.is_selected {
+            ray.DrawRectangleLinesEx(
+                ray.Rectangle{f32(posX)-2, f32(posY)-2, f32(width)+4, f32(height)+4},
+                2,
+                ray.WHITE,
+            )
+        }
 
-        ray.DrawRectangleLinesEx(
-            ray.Rectangle{f32(posX), f32(posY), f32(width), f32(height)},
-            f32(thickness),
-            outline_color,
-        );
+        ray.DrawRectangle(posX, posY, width, height, body_color);
+        ray.DrawRectangleLines(posX, posY, width, height, ray.BLACK);
 
         ray.DrawText(
-            ray.TextFormat("%v", machine.type),
-            posX + 5,
-            posY + 5,
-            10,
+            strings.clone_to_cstring(def.name),
+            posX + 5, 
+            posY + 5, 
+            10, 
             ray.BLACK,
-        );
+        )
     }
 }
