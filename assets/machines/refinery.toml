@@ -1,0 +1,29 @@
+id = "refinery"
+name = "Refinery"
+width = 120
+height = 100
+color = [100, 100, 50, 255] # R, G, B, A
+
+[[ports]]
+type = "input"
+content = "item"
+x = 0
+y = 33
+
+[[ports]]
+type = "input"
+content = "fluid"
+x = 0
+y = 66
+
+[[ports]]
+type = "output"
+content = "item"
+x = 120
+y = 33
+
+[[ports]]
+type = "output"
+content = "fluid"
+x = 120
+y = 66

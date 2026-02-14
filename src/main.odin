@@ -44,6 +44,33 @@ main :: proc() {
         append(&factory.machines, new_machine);
     }
 
+    if "refinery" in factory.machine_registry {
+        new_machine := model.Machine{
+            uuid = 4,
+            def_id = "refinery",
+            pos = {200, 250},
+        };
+        append(&factory.machines, new_machine);
+    }
+
+    if "splitter" in factory.machine_registry {
+        new_machine := model.Machine{
+            uuid = 5,
+            def_id = "splitter",
+            pos = {350, 350},
+        };
+        append(&factory.machines, new_machine);
+    }
+
+    if "merger" in factory.machine_registry {
+        new_machine := model.Machine{
+            uuid = 6,
+            def_id = "merger",
+            pos = {400, 400},
+        };
+        append(&factory.machines, new_machine);
+    }
+
     if "iron_node" in factory.ore_node_registry {
         new_node := model.OreNode {
             uuid = 100,

@@ -3,8 +3,6 @@ name = "Miner MK1"
 width = 120
 height = 120
 color = [50, 255, 100, 255] # R, G, B, A
-inputs = 1
-outputs = 1
 
 [[ports]]
 type = "input"

@@ -3,8 +3,7 @@ name = "Smelter"
 width = 100
 height = 80
 color = [255, 100, 50, 255] # R, G, B, A
-inputs = 1
-outputs = 1
+
 
 [[ports]]
 type = "input"
