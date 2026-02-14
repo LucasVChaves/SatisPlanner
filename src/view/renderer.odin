@@ -6,10 +6,6 @@ import ray "vendor:raylib";
 import "core:strings";
 import "../model";
 
-COLOR_MACHINE_BODY :: ray.Color{200, 200, 200, 255}
-COLOR_MACHINE_OUTLINE :: ray.Color{50, 50, 50, 255}
-COLOR_SELECTED :: ray.Color{230, 41, 55, 255}
-
 draw_factory :: proc(factory: ^model.Factory) {
     for &node in factory.ore_nodes {
         def, exists := factory.ore_node_registry[node.def_id];
@@ -22,24 +18,24 @@ draw_factory :: proc(factory: ^model.Factory) {
         color := def.color;
 
         if node.is_selected {
-            ray.DrawCircleLines(posX, posY, radius + 4, ray.WHITE);
+            ray.DrawCircleLines(posX, posY, radius + 4, FICSIT_SILVER);
         }
 
         ray.DrawCircle(posX, posY, radius, color);
-        ray.DrawCircleLines(posX, posY, radius, ray.BLACK);
+        ray.DrawCircleLines(posX, posY, radius, INDUSTRIAL_GRAY);
     
         ray.DrawText(
             strings.clone_to_cstring(def.name), 
             posX - 20, 
             posY - 10, 
             10, 
-            ray.BLACK
+            CARBON_BLACK
         );
 
         base_rate := def.rates[node.purity]
         
         purity_text := ray.TextFormat("%v (%.0f/min)", node.purity, base_rate)
-        ray.DrawText(purity_text, posX - 30, posY + 5, 10, ray.DARKGRAY)
+        ray.DrawText(purity_text, posX - 30, posY + 5, 10, INDUSTRIAL_GRAY)
     }
 
     for &machine in factory.machines {
@@ -57,12 +53,12 @@ draw_factory :: proc(factory: ^model.Factory) {
             ray.DrawRectangleLinesEx(
                 ray.Rectangle{f32(posX)-2, f32(posY)-2, f32(width)+4, f32(height)+4},
                 2,
-                ray.WHITE,
+                FICSIT_SILVER,
             )
         }
 
         ray.DrawRectangle(posX, posY, width, height, body_color);
-        ray.DrawRectangleLines(posX, posY, width, height, ray.BLACK);
+        ray.DrawRectangleLines(posX, posY, width, height, CARBON_BLACK);
 
         draw_ports(machine, def);
 
@@ -71,7 +67,7 @@ draw_factory :: proc(factory: ^model.Factory) {
             posX + 5, 
             posY + 5, 
             10, 
-            ray.BLACK,
+            CARBON_BLACK,
         )
     }
 }
@@ -85,14 +81,14 @@ draw_ports :: proc(machine: model.Machine, def: model.MachineDef) {
         px := machine.pos.x + port.offset.x;
         py := machine.pos.y + port.offset.y;
 
-        color := port.type == .Input ? ray.ORANGE : ray.GREEN;
+        color := port.type == .Input ? FICSIT_ORANGE : GRASSFIELDS_GREEN;
         if port.content == .Fluid {
             ray.DrawCircle(i32(px), i32(py), half_size, color);
-            ray.DrawCircleLines(i32(px), i32(py), half_size, ray.BLACK);
+            ray.DrawCircleLines(i32(px), i32(py), half_size, CARBON_BLACK);
         } else {
             rect := ray.Rectangle{px - half_size, py - half_size, size, size};
             ray.DrawRectangleRec(rect, color);
-            ray.DrawRectangleLinesEx(rect, 1.0,  ray.BLACK);
+            ray.DrawRectangleLinesEx(rect, 1.0,  CARBON_BLACK);
         }
     }
 }
@@ -135,7 +131,7 @@ draw_single_connection :: proc(factory: ^model.Factory, conn: model.Connection, 
 
     // Polyline
     thick := f32(4.0);
-    color := (conn.type == .Fluid) ? ray.Color{200, 100, 50, 200} : ray.Color{50, 50, 50, 200};
+    color := (conn.type == .Fluid) ? COPPER : IRON;
     if is_ghost { color.a = 100 };
 
     prev := start_pos
