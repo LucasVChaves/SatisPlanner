@@ -2,6 +2,8 @@ package controller
 
 import "core:math/linalg"
 import "core:math";
+import "core:slice";
+import "core:fmt";
 import ray "vendor:raylib";
 import "../model";
 
@@ -34,6 +36,7 @@ find_port_at_mouse :: proc(factory: ^model.Factory, mouse_world: ray.Vector2) ->
             dx := mouse_world.x - px;
             dy := mouse_world.y - py;
             if (dx*dx + dy*dy) < (threshold*threshold) {
+                //fmt.println("DEBUG: Found port at {%v, %v} in machine %s", px, py, machine.uuid);
                 return model.PortRef{
                     machine_uuid = machine.uuid, 
                     port_idx = idx,
@@ -161,49 +164,134 @@ update_select_mode :: proc(factory: ^model.Factory, mouse_world: linalg.Vector2f
 update_connect_mode :: proc(factory: ^model.Factory, mouse_world: linalg.Vector2f32) {
     ray.SetMouseCursor(.CROSSHAIR);
 
-    hover_port, has_hover := find_port_at_mouse(factory, {mouse_world.x, mouse_world.y});
+    hover_port, has_hover := find_port_at_mouse(factory, {mouse_world.x, mouse_world.y})
 
     if ray.IsMouseButtonPressed(.LEFT) {
         if !ctrl_state.is_building {
             if has_hover {
-                // TODO: Check if OUTPUT
-                ctrl_state.is_building = true;
-                ctrl_state.ghost_connection.from = hover_port;
-            }
-        } else {
-            if has_hover {
-                if hover_port.machine_uuid != ctrl_state.ghost_connection.from.machine_uuid {
-                    final_conn := ctrl_state.ghost_connection;
-                    final_conn.to = hover_port;
-                    final_conn.waypoints = make([dynamic]linalg.Vector2f32, len(ctrl_state.ghost_connection.waypoints))
-                    copy(final_conn.waypoints[:], ctrl_state.ghost_connection.waypoints[:])
-                    
-                    append(&factory.connections, final_conn);
-                    
-                    ctrl_state.is_building = false;
-                    ctrl_state.ghost_connection.waypoints = nil;
-                }
-            } else {
-                point := mouse_world;
-                
-                if ray.IsKeyDown(.V) && len(ctrl_state.ghost_connection.waypoints) > 0 {
-                    last := ctrl_state.ghost_connection.waypoints[len(ctrl_state.ghost_connection.waypoints)-1];
-                    dx := abs(point.x - last.x);
-                    dy := abs(point.y - last.y);
-                    if dx > dy { point.y = last.y; } else { point.x = last.x; }
-                } else if ray.IsKeyDown(.V) {
-                    last := ctrl_state.ghost_connection.from.abs_pos;
-                    dx := abs(point.x - last.x);
-                    dy := abs(point.y - last.y);
-                    if dx > dy { point.y = last.y; } else { point.x = last.x ;}
+                if is_port_occupied(factory, hover_port) {
+                    fmt.println("WARNING: Port already has connection.");
+                    return;
                 }
 
-                append(&ctrl_state.ghost_connection.waypoints, point);
+                ctrl_state.is_building = true;
+                ctrl_state.ghost_connection.from = hover_port;
+                
+                def, _ := get_port_definition(factory, hover_port);
+                ctrl_state.ghost_connection.type = def.content;
             }
+            return;
+        }
+
+        if has_hover {
+            if ctrl_state.ghost_connection.from.machine_uuid == hover_port.machine_uuid {
+                fmt.println("WARNING: Cannot connect to self");
+                return ;
+            }
+            
+            if is_port_occupied(factory, hover_port) {
+                fmt.println("WARNING: Port already occupied");
+                return;
+            }
+
+            start_def, ok1 := get_port_definition(factory, ctrl_state.ghost_connection.from);
+            end_def, ok2 := get_port_definition(factory, hover_port);
+            if !ok1 || !ok2 { return; }
+
+            if start_def.type == end_def.type {
+                fmt.println("WARNING: Cannot connect input to input or output to output");
+                return;
+            }
+
+            if start_def.content != end_def.content {
+                fmt.println("WARNING: Content not compatible");
+                return;
+            }
+
+            final_conn := ctrl_state.ghost_connection;
+            
+            if start_def.type == .Input {
+                final_conn.from = hover_port;
+                final_conn.to = ctrl_state.ghost_connection.from;
+                if len(ctrl_state.ghost_connection.waypoints) > 0 {
+                    slice.reverse(ctrl_state.ghost_connection.waypoints[:]);
+                }
+            } else {
+                final_conn.to = hover_port;
+            }
+            
+            if len(ctrl_state.ghost_connection.waypoints) > 0 {
+                final_conn.waypoints = make([dynamic]linalg.Vector2f32, len(ctrl_state.ghost_connection.waypoints));
+                copy(final_conn.waypoints[:], ctrl_state.ghost_connection.waypoints[:]);
+            }
+            
+            final_conn.type = start_def.content;
+            append(&factory.connections, final_conn);
+            
+            ctrl_state.is_building = false;
+            delete(ctrl_state.ghost_connection.waypoints);
+            ctrl_state.ghost_connection = model.Connection{};
+            
+        } else {
+            point := mouse_world;
+            
+            if ray.IsKeyDown(.V) {
+                last_pos := linalg.Vector2f32{0, 0};
+                
+                if len(ctrl_state.ghost_connection.waypoints) > 0 {
+                    last_pos = ctrl_state.ghost_connection.waypoints[len(ctrl_state.ghost_connection.waypoints)-1];
+                } else {
+                    start_mach, _ := model.get_machine_by_uuid(factory, ctrl_state.ghost_connection.from.machine_uuid);
+                    def, _ := factory.machine_registry[start_mach.def_id];
+                    port := def.ports[ctrl_state.ghost_connection.from.port_idx];
+                    last_pos = start_mach.pos + port.offset;
+                }
+
+                dx := abs(point.x - last_pos.x);
+                dy := abs(point.y - last_pos.y);
+                
+                if dx > dy { point.y = last_pos.y; } else { point.x = last_pos.x; }
+            }
+
+            append(&ctrl_state.ghost_connection.waypoints, point);
         }
     }
 }
 
 get_ghost_connection :: proc() -> (model.Connection, bool){
     return ctrl_state.ghost_connection, ctrl_state.is_building;
+}
+
+get_port_definition :: proc(factory: ^model.Factory, ref: model.PortRef) -> (model.PortDef, bool) {
+    machine_ptr: ^model.Machine = nil;
+    for &m in factory.machines {
+        if m.uuid == ref.machine_uuid {
+            machine_ptr = &m;
+            break;
+        }
+    }
+    if machine_ptr == nil { return model.PortDef{}, false; }
+
+    def, exists := factory.machine_registry[machine_ptr.def_id];
+    if !exists { return model.PortDef{}, false; }
+
+    if ref.port_idx < 0 || ref.port_idx >= len(def.ports) {
+        return model.PortDef{}, false;
+    }
+
+    return def.ports[ref.port_idx], true;
+}
+
+is_port_occupied :: proc(factory: ^model.Factory, ref: model.PortRef) -> bool {
+    for conn in factory.connections {
+        if conn.from.machine_uuid == ref.machine_uuid && conn.from.port_idx == ref.port_idx {
+            return true;
+        }
+        if dest, ok := conn.to.?; ok {
+            if dest.machine_uuid == ref.machine_uuid && dest.port_idx == ref.port_idx {
+                return true;
+            }
+        }
+    }
+    return false;
 }

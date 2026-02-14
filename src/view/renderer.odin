@@ -110,7 +110,7 @@ draw_single_connection :: proc(factory: ^model.Factory, conn: model.Connection, 
     end_pos: linalg.Vector2f32;
     has_end := false;
 
-    start_machine, found_s := get_machine_by_uuid(factory, conn.from.machine_uuid);
+    start_machine, found_s := model.get_machine_by_uuid(factory, conn.from.machine_uuid);
     if !found_s {return;}
 
     start_def := factory.machine_registry[start_machine.def_id];
@@ -118,7 +118,7 @@ draw_single_connection :: proc(factory: ^model.Factory, conn: model.Connection, 
     start_pos = start_machine.pos + start_port.offset;
 
     if dest, ok := conn.to.?; ok {
-        end_machine, found_e := get_machine_by_uuid(factory, dest.machine_uuid);
+        end_machine, found_e := model.get_machine_by_uuid(factory, dest.machine_uuid);
         if found_e {
             end_def := factory.machine_registry[end_machine.def_id];
             end_port := end_def.ports[dest.port_idx];
@@ -147,14 +147,4 @@ draw_single_connection :: proc(factory: ^model.Factory, conn: model.Connection, 
     }
 
     ray.DrawLineEx({prev.x, prev.y}, {end_pos.x, end_pos.y}, thick, color);
-}
-
-get_machine_by_uuid :: proc(factory: ^model.Factory, uuid: u64) -> (^model.Machine, bool) {
-    for &m in factory.machines {
-        if m.uuid == uuid {
-            return &m, true;
-        }
-    }
-    fmt.printfln("WARNING: No machine found with uuid %v in factory", uuid);
-    return nil, false;
 }
