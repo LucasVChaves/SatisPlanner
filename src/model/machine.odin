@@ -10,6 +10,7 @@ MachineDef :: struct {
     color: ray.Color,
     input_ports: int,
     output_ports: int,
+    ports: [dynamic]PortDef,
 }
 
 Machine :: struct {

@@ -103,6 +103,35 @@ parse_machine_toml :: proc(filepath: string) -> (MachineDef, bool) {
     } else {
         def.color = ray.GRAY;
     }
+    
+    if port_list, ok := toml.get_list(doc, "ports"); ok {     
+        for p_val in port_list {
+            #partial switch p_tbl in p_val {
+            
+            case ^toml.Table:           
+                new_port := PortDef{};
+                
+                if type_str, ok := toml.get_string(p_tbl, "type"); ok {
+                    new_port.type = (type_str == "output") ? .Output : .Input;
+                }
+
+                if content_str, ok := toml.get_string(p_tbl, "content"); ok {
+                    switch content_str {
+                    case "fluid": new_port.content = .Fluid;
+                    case: new_port.content = .Item;
+                    }
+                }
+
+                if x, ok := toml.get_i64(p_tbl, "x"); ok { new_port.offset.x = f32(x); }
+                if y, ok := toml.get_i64(p_tbl, "y"); ok { new_port.offset.y = f32(y); }
+
+                append(&def.ports, new_port);
+            case:
+                // DEBUG
+                fmt.printf("Unexpected type in ports list: %T\n", p_val)
+            }
+        }
+    }
 
     return def, true;
 }

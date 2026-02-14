@@ -62,6 +62,8 @@ draw_factory :: proc(factory: ^model.Factory) {
         ray.DrawRectangle(posX, posY, width, height, body_color);
         ray.DrawRectangleLines(posX, posY, width, height, ray.BLACK);
 
+        draw_ports(machine, def);
+
         ray.DrawText(
             strings.clone_to_cstring(def.name),
             posX + 5, 
@@ -69,5 +71,26 @@ draw_factory :: proc(factory: ^model.Factory) {
             10, 
             ray.BLACK,
         )
+    }
+}
+
+draw_ports :: proc(machine: model.Machine, def: model.MachineDef) {
+    // TODO: Move to config file
+    size :: 12.0;
+    half_size :: size / 2.0;
+
+    for port in def.ports {
+        px := machine.pos.x + port.offset.x;
+        py := machine.pos.y + port.offset.y;
+
+        color := port.type == .Input ? ray.ORANGE : ray.GREEN;
+        if port.content == .Fluid {
+            ray.DrawCircle(i32(px), i32(py), half_size, color);
+            ray.DrawCircleLines(i32(px), i32(py), half_size, ray.BLACK);
+        } else {
+            rect := ray.Rectangle{px - half_size, py - half_size, size, size};
+            ray.DrawRectangleRec(rect, color);
+            ray.DrawRectangleLinesEx(rect, 1.0,  ray.BLACK);
+        }
     }
 }

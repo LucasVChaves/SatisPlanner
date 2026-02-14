@@ -5,3 +5,15 @@ height = 120
 color = [50, 255, 100, 255] # R, G, B, A
 inputs = 1
 outputs = 1
+
+[[ports]]
+type = "input"
+content = "item"
+x = 0
+y = 60
+
+[[ports]]
+type = "output"
+content = "item"
+x = 120
+y = 60

@@ -1,0 +1,35 @@
+id = "manufacturer"
+name = "Manufacturer"
+width = 160
+height = 120
+color = [200, 150, 50, 255]
+
+[[ports]]
+type = "input"
+content = "item"
+x = 0
+y = 20
+
+[[ports]]
+type = "input"
+content = "item"
+x = 0
+y = 45
+
+[[ports]]
+type = "input"
+content = "item"
+x = 0
+y = 70
+
+[[ports]]
+type = "input"
+content = "item"
+x = 0
+y = 95
+
+[[ports]]
+type = "output"
+content = "item"
+x = 160
+y = 60
