@@ -62,7 +62,10 @@ load_ore_node_registry :: proc(path: string) -> map[string]OreNodeDef {
 }
 
 parse_machine_toml :: proc(filepath: string) -> (MachineDef, bool) {
-    doc, err := toml.parse_file(filepath, context.temp_allocator);
+    toml_string, read_ok := read_toml_safe(filepath);
+    if !read_ok { return MachineDef{}, false; }
+
+    doc, err := toml.parse(toml_string, filepath, context.temp_allocator);
 
     if toml.print_error(err) do return MachineDef{}, false;
 
@@ -137,8 +140,10 @@ parse_machine_toml :: proc(filepath: string) -> (MachineDef, bool) {
 }
 
 parse_ore_node_toml :: proc(filepath: string) -> (OreNodeDef, bool) {
-    doc, err := toml.parse_file(filepath, context.temp_allocator);
-    if toml.print_error(err) do return OreNodeDef{}, false;
+    toml_string, read_ok := read_toml_safe(filepath);
+    if !read_ok { return OreNodeDef{}, false; }
+
+    doc, err := toml.parse(toml_string, filepath, context.temp_allocator);
 
     def := OreNodeDef{}
 
@@ -190,4 +195,22 @@ parse_ore_node_toml :: proc(filepath: string) -> (OreNodeDef, bool) {
     }
 
     return def, true;
+}
+
+// Had a problem in which TOML files that didnt end with an empty line could not be read properly
+// (last line value wont be read) so I made this quick hack
+read_toml_safe :: proc(filepath: string) -> (string, bool) {
+    data, ok := os.read_entire_file(filepath, context.temp_allocator);
+    if !ok { return "", false; }
+    
+    content := string(data)
+    if len(content) == 0 { return "", false; }
+    
+    last_char := content[len(content)-1]
+    if last_char == '\n' {
+        return content, true;
+    }
+
+    safe_content := strings.concatenate({content, "\n"}, context.temp_allocator);
+    return safe_content, true;
 }

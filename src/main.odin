@@ -35,6 +35,15 @@ main :: proc() {
         append(&factory.machines, new_machine);
     }
 
+    if "manufacturer" in factory.machine_registry {
+        new_machine := model.Machine{
+            uuid = 3,
+            def_id = "manufacturer",
+            pos = {600, 250},
+        };
+        append(&factory.machines, new_machine);
+    }
+
     if "iron_node" in factory.ore_node_registry {
         new_node := model.OreNode {
             uuid = 100,
