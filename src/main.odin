@@ -10,6 +10,7 @@ BACKGROUND_COLOR := ray.Color{24, 24, 24, 255};
 main :: proc() {
     ray.InitWindow(1280, 720, "SatisPlanner");
     defer ray.CloseWindow();
+    ray.SetExitKey(.DELETE);
     ray.SetTargetFPS(60);
 
     factory := model.Factory{}
@@ -94,7 +95,12 @@ main :: proc() {
         ray.ClearBackground(BACKGROUND_COLOR);
 
         ray.BeginMode2D(camera);
-        view.draw_factory(&factory);
+            view.draw_factory(&factory);
+            view.draw_connections(&factory, camera);
+            ghost, is_building := controller.get_ghost_connection();
+            if is_building {
+                view.draw_single_connection(&factory, ghost, true, camera);
+            }
         ray.EndMode2D();
         
         ray.EndDrawing();

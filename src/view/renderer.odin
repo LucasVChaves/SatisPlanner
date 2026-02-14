@@ -1,5 +1,7 @@
 package view
 
+import "core:math/linalg"
+import "core:fmt";
 import ray "vendor:raylib";
 import "core:strings";
 import "../model";
@@ -93,4 +95,66 @@ draw_ports :: proc(machine: model.Machine, def: model.MachineDef) {
             ray.DrawRectangleLinesEx(rect, 1.0,  ray.BLACK);
         }
     }
+}
+
+draw_connections :: proc(factory: ^model.Factory, camera: ray.Camera2D) {
+    for conn in factory.connections {
+        draw_single_connection(factory, conn, false, camera);
+    }
+
+    // TODO: Draw ghost connections
+}
+
+draw_single_connection :: proc(factory: ^model.Factory, conn: model.Connection, is_ghost: bool, camera: ray.Camera2D) {
+    start_pos: linalg.Vector2f32;
+    end_pos: linalg.Vector2f32;
+    has_end := false;
+
+    start_machine, found_s := get_machine_by_uuid(factory, conn.from.machine_uuid);
+    if !found_s {return;}
+
+    start_def := factory.machine_registry[start_machine.def_id];
+    start_port := start_def.ports[conn.from.port_idx];
+    start_pos = start_machine.pos + start_port.offset;
+
+    if dest, ok := conn.to.?; ok {
+        end_machine, found_e := get_machine_by_uuid(factory, dest.machine_uuid);
+        if found_e {
+            end_def := factory.machine_registry[end_machine.def_id];
+            end_port := end_def.ports[dest.port_idx];
+            end_pos = end_machine.pos + end_port.offset;
+            has_end = true;
+        }
+    } else if is_ghost {
+        mouse_v2 := ray.GetScreenToWorld2D(ray.GetMousePosition(), camera);
+        end_pos = {mouse_v2.x, mouse_v2.y};
+        has_end = true;
+    }
+
+    if !has_end { return }
+
+    // Polyline
+    thick := f32(4.0);
+    color := (conn.type == .Fluid) ? ray.Color{200, 100, 50, 200} : ray.Color{50, 50, 50, 200};
+    if is_ghost { color.a = 100 };
+
+    prev := start_pos
+    
+    for wp in conn.waypoints {
+        ray.DrawLineEx({prev.x, prev.y}, {wp.x, wp.y}, thick, color);
+        ray.DrawCircleV({wp.x, wp.y}, thick, color);
+        prev = wp;
+    }
+
+    ray.DrawLineEx({prev.x, prev.y}, {end_pos.x, end_pos.y}, thick, color);
+}
+
+get_machine_by_uuid :: proc(factory: ^model.Factory, uuid: u64) -> (^model.Machine, bool) {
+    for &m in factory.machines {
+        if m.uuid == uuid {
+            return &m, true;
+        }
+    }
+    fmt.printfln("WARNING: No machine found with uuid %v in factory", uuid);
+    return nil, false;
 }

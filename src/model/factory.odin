@@ -7,5 +7,7 @@ Factory :: struct {
     ore_node_registry: map[string]OreNodeDef,
     ore_nodes: [dynamic]OreNode,
 
+    connections: [dynamic]Connection,
+
     next_uuid: u64,
 }

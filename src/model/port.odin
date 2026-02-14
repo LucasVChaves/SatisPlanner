@@ -22,3 +22,9 @@ PortDef :: struct {
 
     ports: [dynamic]PortDef,
 }
+
+PortRef :: struct {
+    port_idx: int,
+    machine_uuid: u64,
+    abs_pos: linalg.Vector2f32,
+}
